@@ -346,6 +346,21 @@ async function startServer() {
     } catch (error: any) { res.status(500).json({ error: error.message }); }
   });
 
+  app.post('/api/supplier/cj/search', async (req, res) => {
+    try {
+      const { query } = req.body;
+      const token = await getActiveCJToken();
+      
+      const response = await axios.get(`${CJ_API_URL}/product/list?productName=${encodeURIComponent(query)}&pageSize=10`, {
+        headers: { 'CJ-Access-Token': token }
+      });
+
+      res.json(response.data);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Vite middleare & Startup...
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({

@@ -66,7 +66,7 @@ function Navbar() {
       <div className="max-w-[1400px] mx-auto px-12 h-full flex items-center justify-between">
         <div className="flex items-center gap-12">
           <Link to="/" className="text-2xl font-display font-medium tracking-tighter flex items-center gap-1">
-            LUXE<span className="text-luxury-gold italic">FLOW</span>
+            LUXE<span className="text-luxury-gold italic">DOOW</span>
           </Link>
           
           <div className="hidden lg:flex items-center gap-10 text-xs-wide text-gray-500">

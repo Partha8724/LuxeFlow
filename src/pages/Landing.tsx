@@ -82,10 +82,10 @@ export default function Landing() {
             {typingText}
           </div>
           <h1 className="text-7xl md:text-9xl font-display font-light mb-8 tracking-tight leading-[0.85]">
-            LUXE <span className="text-luxury-gold italic font-light">FLOW</span>
+            LUXE <span className="text-luxury-gold italic font-light">DOOW</span>
           </h1>
           <p className="text-gray-400 text-[10px] md:text-xs uppercase tracking-[0.6em] font-light mb-20 max-w-lg mx-auto leading-relaxed">
-            Curating a global collection of architectural objects and high-end horology.
+            The Headless Architecture for Billion-Dollar Global Dropshipping Platforms.
           </p>
           
           <div className="flex flex-col md:flex-row gap-8 justify-center items-center">
