@@ -93,17 +93,17 @@ export default function Landing() {
             <motion.div
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1.5, ease: "easeOut" }}
+              transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
             >
-              <div className="text-luxury-gold text-[10px] uppercase tracking-[0.8em] mb-12 flex justify-center items-center gap-6 font-bold">
-                <span className="w-12 h-px bg-luxury-gold/50 hidden sm:block"></span>
+              <div className="text-luxury-gold text-[12px] uppercase tracking-[1em] mb-14 flex justify-center items-center gap-10 font-black opacity-90">
+                <span className="w-16 h-px bg-luxury-gold/40 hidden sm:block"></span>
                 {typingText}
-                <span className="w-12 h-px bg-luxury-gold/50 hidden sm:block"></span>
+                <span className="w-16 h-px bg-luxury-gold/40 hidden sm:block"></span>
               </div>
-              <h1 className="text-6xl md:text-[11vw] font-display font-light leading-[0.85] tracking-tight mb-12">
-                LUXE <span className="text-luxury-gold italic">DOOW</span>
+              <h1 className="text-7xl md:text-[13vw] font-display font-black leading-[0.8] tracking-tighter mb-16 text-white">
+                LUXE <span className="text-luxury-gold italic font-medium">DOOW</span>
               </h1>
-              <p className="text-gray-400 text-[10px] md:text-xs uppercase tracking-[0.6em] font-light mb-16 max-w-2xl mx-auto leading-relaxed">
+              <p className="text-gray-400 text-xs md:text-sm uppercase tracking-[0.8em] font-black mb-20 max-w-4xl mx-auto leading-relaxed opacity-60">
                 The Sovereign OS for Billion-Dollar Global Dropshipping Platforms and Architectural Commerce.
               </p>
             </motion.div>

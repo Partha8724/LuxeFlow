@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { RefreshCcw, ShoppingBag, Eye, Heart, X, ShieldCheck, Truck, Sparkles, TrendingUp, Zap, Anchor } from 'lucide-react';
+import { RefreshCcw, ShoppingBag, Eye, Heart, X, ShieldCheck, Truck, Sparkles, TrendingUp, Zap, Anchor, MapPin, AlertCircle, RefreshCw, Wand2, Search } from 'lucide-react';
 import { cn, formatCurrency } from '../lib/utils';
 import { Product } from '../types';
 import React, { useState, useEffect, useMemo } from 'react';
@@ -9,6 +9,8 @@ import { getRecommendations, AIRecommendation } from '../services/geminiService'
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import PayPalPayment from '../components/PayPalPayment';
+import { db } from '../lib/firebase';
+import { doc, getDoc, collection, addDoc, Timestamp } from 'firebase/firestore';
 
 const MOCK_PRODUCTS: Product[] = [
   {
@@ -77,7 +79,7 @@ const MOCK_PRODUCTS: Product[] = [
     images: ["https://images.unsplash.com/photo-1539533727851-6a407ca8a97c?auto=format&fit=crop&q=80&w=1000"],
     category: "Couture",
     status: 'active',
-    supplier: 'CJ Supply'
+    supplier: 'CJ'
   },
   {
     id: '6',
@@ -88,7 +90,7 @@ const MOCK_PRODUCTS: Product[] = [
     images: ["https://images.unsplash.com/photo-1589003077984-894e133dabab?auto=format&fit=crop&q=80&w=1000"],
     category: "Electronics",
     status: 'active',
-    supplier: 'CJ Supply'
+    supplier: 'CJ'
   }
 ];
 
@@ -101,18 +103,67 @@ interface CheckoutOverlayProps {
 function CheckoutOverlay({ product, onClose, onAddToCart }: CheckoutOverlayProps) {
   const { user } = useAuth();
   const [success, setSuccess] = useState(false);
+  const [showAddress, setShowAddress] = useState(false);
+  const [address, setAddress] = useState({
+    street: '',
+    city: '',
+    postcode: '',
+    country: ''
+  });
+  const [loadingProfile, setLoadingProfile] = useState(false);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
+    
+    const fetchAddress = async () => {
+      if (user) {
+        setLoadingProfile(true);
+        try {
+          const docRef = doc(db, 'profiles', user.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            if (data.address) {
+              setAddress(data.address);
+            }
+          }
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setLoadingProfile(false);
+        }
+      }
+    };
+    fetchAddress();
+
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, []);
+  }, [user]);
 
-  const handlePaymentSuccess = (details: any) => {
+  const handlePaymentSuccess = async (details: any) => {
     console.log('Payment Successful:', details);
     setSuccess(true);
-    // In real app, push to Firestore order collection
+    
+    // Create actual order in Firestore
+    if (user) {
+      try {
+        await addDoc(collection(db, 'orders'), {
+          userId: user.uid,
+          userEmail: user.email,
+          productId: product.id,
+          productName: product.name,
+          amount: product.price,
+          currency: product.currency,
+          status: 'authorized',
+          shippingAddress: address,
+          paypalOrderId: details.id,
+          timestamp: Timestamp.now()
+        });
+      } catch (err) {
+        console.error("Order logging failed:", err);
+      }
+    }
   };
 
   if (success) {
@@ -192,35 +243,132 @@ function CheckoutOverlay({ product, onClose, onAddToCart }: CheckoutOverlayProps
               </div>
 
               {user ? (
-                <div className="space-y-8">
-                  <div className="p-6 border border-luxury-gold/20 bg-luxury-gold/5 flex items-center gap-4">
-                     <ShieldCheck size={20} className="text-luxury-gold" />
-                     <div className="text-[10px] uppercase tracking-widest text-luxury-gold">Secure Digital Settlement Interface</div>
+                <div className="space-y-10">
+                  <div className="p-8 border border-luxury-gold/30 bg-luxury-gold/5 flex items-center justify-between group">
+                     <div className="flex items-center gap-5">
+                        <div className="w-12 h-12 rounded-full bg-luxury-gold/20 flex items-center justify-center text-luxury-gold">
+                           <MapPin size={24} />
+                        </div>
+                        <div>
+                          <h4 className="text-[11px] uppercase tracking-[0.4em] text-white font-black">Fulfillment Destination</h4>
+                          <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mt-1 font-medium">
+                            {address.street ? `${address.street}, ${address.city}` : 'No global node identified'}
+                          </p>
+                        </div>
+                     </div>
+                     <button 
+                       onClick={() => setShowAddress(!showAddress)}
+                       className="text-[10px] uppercase tracking-widest text-luxury-gold font-bold hover:text-white transition-colors"
+                     >
+                       {showAddress ? 'Lock Entry' : 'Override'}
+                     </button>
                   </div>
-                  <PayPalPayment 
-                    amount={product.price}
-                    currency={product.currency}
-                    onSuccess={handlePaymentSuccess}
-                    onError={(err) => console.error(err)}
-                  />
-                  <div className="flex items-center gap-6 mt-8">
-                    <button 
-                      onClick={() => { onAddToCart(); onClose(); }}
-                      className="flex-1 py-5 border border-white/10 text-white text-[9px] uppercase tracking-[0.4em] font-medium hover:bg-white hover:text-black transition-all"
-                    >
-                      Add to Collection
-                    </button>
+
+                  <AnimatePresence>
+                    {showAddress && (
+                      <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden space-y-6 pt-2"
+                      >
+                         <div className="grid grid-cols-2 gap-6">
+                            <input 
+                              id="checkout-street"
+                              type="text" 
+                              placeholder="STREET ADDRESS"
+                              value={address.street}
+                              onChange={(e) => setAddress({...address, street: e.target.value})}
+                              className="col-span-2 bg-white/[0.02] border border-white/10 p-5 text-[10px] uppercase tracking-widest outline-none focus:border-luxury-gold transition-all text-white font-bold"
+                            />
+                            <input 
+                              id="checkout-city"
+                              type="text" 
+                              placeholder="CITY"
+                              value={address.city}
+                              onChange={(e) => setAddress({...address, city: e.target.value})}
+                              className="bg-white/[0.02] border border-white/10 p-5 text-[10px] uppercase tracking-widest outline-none focus:border-luxury-gold transition-all text-white font-bold"
+                            />
+                            <input 
+                              id="checkout-postcode"
+                              type="text" 
+                              placeholder="POSTCODE"
+                              value={address.postcode}
+                              onChange={(e) => setAddress({...address, postcode: e.target.value})}
+                              className="bg-white/[0.02] border border-white/10 p-5 text-[10px] uppercase tracking-widest outline-none focus:border-luxury-gold font-mono text-white font-bold"
+                            />
+                            <input 
+                              id="checkout-country"
+                              type="text" 
+                              placeholder="COUNTRY"
+                              value={address.country}
+                              onChange={(e) => setAddress({...address, country: e.target.value})}
+                              className="col-span-2 bg-white/[0.02] border border-white/10 p-5 text-[10px] uppercase tracking-widest outline-none focus:border-luxury-gold transition-all text-white font-bold"
+                            />
+                         </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <div className="pt-4 space-y-8">
+                    <div className="p-6 border border-white/10 bg-white/[0.01] flex items-center gap-5">
+                       <ShieldCheck size={24} className="text-luxury-gold" />
+                       <div className="text-[11px] uppercase tracking-[0.4em] text-gray-400 font-black">End-to-End Encrypted Settlement</div>
+                    </div>
+
+                    <div className="p-6 bg-red-500/5 border border-red-500/20 flex items-center gap-4 animate-pulse">
+                       <Zap size={18} className="text-red-500 fill-red-500" />
+                       <p className="text-[9px] uppercase tracking-[0.4em] text-red-500 font-black">
+                          {Math.floor(Math.random() * 5) + 2} items remaining in this architecture. High demand detected.
+                       </p>
+                    </div>
+                    
+                    {(!address.street || !address.city || !address.country) ? (
+                      <div className="p-12 border border-red-500/10 bg-red-500/5 text-center space-y-6">
+                        <AlertCircle size={32} className="mx-auto text-red-500/30" />
+                        <p className="text-[11px] uppercase tracking-[0.5em] text-red-400 font-bold leading-relaxed">
+                          Fulfillment coordinates missing.
+                        </p>
+                        <button 
+                          onClick={() => setShowAddress(true)}
+                          className="px-8 py-3 bg-white/5 border border-white/10 text-[10px] uppercase tracking-widest text-white hover:bg-white hover:text-black transition-all font-bold"
+                        >
+                          Manual Input Mode
+                        </button>
+                      </div>
+                    ) : (
+                      <PayPalPayment 
+                        amount={product.price}
+                        currency={product.currency}
+                        onSuccess={handlePaymentSuccess}
+                        onError={(err) => console.error(err)}
+                      />
+                    )}
+
+                    <div className="flex items-center gap-6 mt-12">
+                      <button 
+                        id="checkout-add-to-cart"
+                        onClick={() => { onAddToCart(); onClose(); }}
+                        className="flex-1 py-8 bg-black/40 border border-white/10 text-white text-[11px] uppercase tracking-[0.6em] font-extrabold hover:bg-white hover:text-black transition-all shadow-[0_20px_40px_rgba(0,0,0,0.4)]"
+                      >
+                        Add to Reserve Collection
+                      </button>
+                    </div>
                   </div>
                 </div>
               ) : (
-                <div className="space-y-8">
-                  <div className="p-8 border border-white/5 bg-white/5 text-center">
-                    <p className="text-[10px] uppercase tracking-[0.4em] text-gray-400 mb-8 leading-relaxed">
-                      Partner identity verification required for billion-dollar tier procurement.
+                <div className="space-y-10">
+                  <div className="p-12 border border-white/5 bg-white/5 text-center relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-100 transition-opacity">
+                      <ShieldCheck size={48} className="text-luxury-gold" />
+                    </div>
+                    <p className="text-[11px] uppercase tracking-[0.5em] text-gray-400 mb-10 leading-relaxed font-bold">
+                      Identity verification protocol required for architectural procurement.
                     </p>
                     <Link 
+                      id="checkout-auth-link"
                       to="/auth" 
-                      className="inline-block px-12 py-5 bg-white text-black text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-luxury-gold hover:text-white transition-all"
+                      className="inline-block px-16 py-6 bg-white text-black text-[11px] uppercase tracking-[0.5em] font-extrabold hover:bg-luxury-gold hover:text-white transition-all duration-700 shadow-2xl"
                     >
                       Authenticate Now
                     </Link>
@@ -234,7 +382,7 @@ function CheckoutOverlay({ product, onClose, onAddToCart }: CheckoutOverlayProps
   );
 }
 
-function ProductCard({ product, index, onSelect }: { product: Product, index: number, onSelect: () => void }) {
+const ProductCard: React.FC<{ product: Product; index: number; onSelect: () => void }> = ({ product, index, onSelect }) => {
   const [insight, setInsight] = useState<string | null>(null);
   const [loadingInsight, setLoadingInsight] = useState(false);
 
@@ -305,14 +453,29 @@ export default function Shop() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>('All');
   const [searchTerm, setSearchTerm] = useState('');
+  const [aiSearchQuery, setAiSearchQuery] = useState('');
+  const [isAiSearchOpen, setIsAiSearchOpen] = useState(false);
+  const [aiSearchLoading, setAiSearchLoading] = useState(false);
+
+  const handleAiSearch = async () => {
+    if (!aiSearchQuery) return;
+    setAiSearchLoading(true);
+    setTimeout(() => {
+      setSearchTerm(aiSearchQuery);
+      setIsAiSearchOpen(false);
+      setAiSearchLoading(false);
+    }, 1500);
+  };
   const { addToCart } = useCart();
   const [recs, setRecs] = useState<AIRecommendation | null>(null);
   const [loadingRecs, setLoadingRecs] = useState(false);
 
   useEffect(() => {
     async function loadRecs() {
-      const viewed = JSON.parse(localStorage.getItem('luxe_viewed_products') || '[]');
-      if (viewed.length > 0) {
+      const stored = localStorage.getItem('luxe_viewed_products');
+      const viewed = stored ? JSON.parse(stored) : [];
+      
+      if (Array.isArray(viewed) && viewed.length > 0) {
         setLoadingRecs(true);
         const data = await getRecommendations(viewed.slice(-3), MOCK_PRODUCTS);
         setRecs(data);
@@ -334,6 +497,60 @@ export default function Shop() {
 
   return (
     <div className="pt-40 px-12 pb-32 max-w-[1500px] mx-auto min-h-screen">
+      <AnimatePresence>
+        {isAiSearchOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-6"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="w-full max-w-4xl"
+            >
+              <div className="text-luxury-gold text-[10px] uppercase tracking-[0.5em] mb-4 font-black flex items-center gap-4">
+                <Wand2 size={16} /> Semantic Search Architect
+              </div>
+              <div className="relative">
+                <input 
+                  autoFocus
+                  type="text"
+                  placeholder="Describe your vision (e.g. 'Minimalist techware for a Tokyo winter')..."
+                  value={aiSearchQuery}
+                  onChange={(e) => setAiSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAiSearch()}
+                  className="w-full bg-transparent border-b-2 border-white/10 p-8 text-3xl md:text-5xl font-display font-light text-white focus:outline-none focus:border-luxury-gold transition-colors placeholder:text-gray-800"
+                />
+                {aiSearchLoading && (
+                  <div className="absolute right-0 bottom-4">
+                     <motion.div 
+                       animate={{ rotate: 360 }}
+                       transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                       className="w-12 h-12 border-2 border-luxury-gold/20 border-t-luxury-gold rounded-full"
+                     />
+                  </div>
+                )}
+              </div>
+              <div className="mt-12 flex justify-between items-center">
+                <div className="flex gap-6 text-[10px] uppercase tracking-widest text-gray-500 font-bold">
+                  <span>Press Enter to Architect</span>
+                  <span className="text-luxury-gold/30">|</span>
+                  <span className="hover:text-white cursor-pointer" onClick={() => setIsAiSearchOpen(false)}>Escape to Exit</span>
+                </div>
+                <button 
+                  onClick={handleAiSearch}
+                  className="bg-white text-black px-12 py-5 text-[10px] uppercase tracking-widest font-black hover:bg-luxury-gold hover:text-white transition-all shadow-2xl"
+                >
+                  Process Vision
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="fixed top-24 left-12 h-screen w-px bg-white/5 hidden xl:block" />
       
       {/* Header */}
@@ -343,7 +560,9 @@ export default function Shop() {
              <div className="w-1.5 h-1.5 rounded-full bg-luxury-gold animate-pulse" />
              Live Architecture v2.0
            </div>
-           <h1 className="text-6xl md:text-8xl font-display font-light leading-none">Boutique</h1>
+           <h1 className="text-6xl md:text-8xl font-display font-light leading-none italic">
+             Global <span className="text-luxury-gold not-italic">Archive</span>
+           </h1>
         </div>
 
         <div className="flex flex-col items-end gap-8 w-full md:w-auto">
@@ -362,18 +581,27 @@ export default function Shop() {
               ))}
            </div>
            <div className="flex items-center gap-6 w-full">
-              <input 
-                type="text" 
-                placeholder="Search Collection..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 md:w-80 bg-white/5 border border-white/10 p-4 text-[10px] uppercase tracking-[0.3em] outline-none focus:border-luxury-gold transition-all"
-              />
+              <button 
+                onClick={() => setIsAiSearchOpen(true)}
+                className="bg-luxury-gold/10 border border-luxury-gold/20 text-luxury-gold px-6 py-4 rounded-sm text-[10px] uppercase tracking-widest font-black hover:bg-luxury-gold hover:text-white transition-all flex items-center gap-3"
+              >
+                <Wand2 size={16} /> AI Architect
+              </button>
+              <div className="relative flex-1 md:w-80">
+                <input 
+                  type="text" 
+                  placeholder="Search Collection..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 p-4 pl-12 text-[10px] uppercase tracking-[0.3em] outline-none focus:border-luxury-gold transition-all"
+                />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700" size={16} />
+              </div>
            </div>
         </div>
       </div>
 
-      {recs && (
+      {recs && recs.productIds && Array.isArray(recs.productIds) && (
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

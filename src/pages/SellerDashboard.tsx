@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Package, RefreshCcw, Wand2, TrendingUp, Truck, ShieldCheck, AlertCircle, Play, Image as ImageIcon, Search, BarChart3, Globe, Zap, Bot, MessageSquare, Plus, Save, Power, Target, Braces } from 'lucide-react';
+import { Package, RefreshCcw, Wand2, TrendingUp, Truck, ShieldCheck, AlertCircle, Play, Image as ImageIcon, Search, BarChart3, Globe, Zap, Bot, MessageSquare, Plus, Save, Power, Target, Braces, Send, Music2, Share2, Flame } from 'lucide-react';
 import { db, auth } from '../lib/firebase';
 import { collection, query, orderBy, onSnapshot, addDoc, Timestamp, doc, updateDoc, getDocs, where } from 'firebase/firestore';
 import { cn } from '../lib/utils';
@@ -166,9 +166,13 @@ function SupportInbox() {
       // Group by participant (user)
       const grouped: any = {};
       chats.forEach((c: any) => {
-        const userId = c.participants.find((p: string) => p !== 'ADMIN_ID');
-        if (!grouped[userId]) grouped[userId] = [];
-        grouped[userId].push(c);
+        if (c.participants && Array.isArray(c.participants)) {
+          const userId = c.participants.find((p: string) => p !== 'ADMIN_ID');
+          if (userId) {
+            if (!grouped[userId]) grouped[userId] = [];
+            grouped[userId].push(c);
+          }
+        }
       });
       setConversations(Object.keys(grouped).map(uid => ({
         uid,
@@ -745,6 +749,83 @@ function CJAuthCard() {
   );
 }
 
+function ViralDiscoveryHub() {
+  const viralStats = [
+    { name: 'Magnetic Phone Charger', viralScore: 98, saturation: 12, trend: 'up', platform: 'TikTok' },
+    { name: 'Self-Cleaning Water Bottle', viralScore: 85, saturation: 45, trend: 'neutral', platform: 'Instagram' },
+    { name: 'Portable Projector Pro', viralScore: 92, saturation: 22, trend: 'up', platform: 'TikTok' },
+    { name: 'Glow-in-the-Dark Skincare', viralScore: 78, saturation: 8, trend: 'up', platform: 'Pinterest' },
+  ];
+
+  return (
+    <div className="space-y-12">
+      <div className="flex items-center justify-between border-b border-white/5 pb-6">
+        <div>
+          <h3 className="text-xl font-display font-light">Viral Intelligence Matrix</h3>
+          <p className="text-[9px] uppercase tracking-[0.3em] text-gray-500 mt-2">Real-time trend analysis from social commerce nodes</p>
+        </div>
+        <div className="flex gap-4">
+           <div className="px-6 py-3 bg-red-500/10 border border-red-500/30 text-[9px] uppercase tracking-widest text-red-500 flex items-center gap-3">
+              <Flame size={14} className="animate-pulse" /> Viral Surge Detected
+           </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
+        {viralStats.map((item, i) => (
+          <div key={i} className="glass p-8 border border-white/5 hover:border-luxury-gold/40 transition-all duration-700 bg-black/40 group">
+            <div className="flex justify-between items-start mb-10">
+              <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-luxury-gold border border-white/10 group-hover:border-luxury-gold/50 transition-colors">
+                 <Music2 size={16} />
+              </div>
+              <div className="text-right">
+                 <p className="text-[8px] text-gray-600 uppercase tracking-widest mb-1">Source</p>
+                 <p className="text-[10px] text-white font-black tracking-widest">{item.platform}</p>
+              </div>
+            </div>
+
+            <h4 className="text-lg font-display text-white mb-6 group-hover:text-luxury-gold transition-colors">{item.name}</h4>
+            
+            <div className="space-y-6">
+               <div>
+                  <div className="flex justify-between text-[9px] uppercase tracking-widest mb-2">
+                    <span className="text-gray-500">Viral Score</span>
+                    <span className="text-luxury-gold">{item.viralScore}%</span>
+                  </div>
+                  <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${item.viralScore}%` }}
+                      className="h-full bg-luxury-gold"
+                    />
+                  </div>
+               </div>
+
+               <div>
+                  <div className="flex justify-between text-[9px] uppercase tracking-widest mb-2">
+                    <span className="text-gray-500">Mkt Saturation</span>
+                    <span className="text-gray-400">{item.saturation}%</span>
+                  </div>
+                  <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${item.saturation}%` }}
+                      className="h-full bg-white/20"
+                    />
+                  </div>
+               </div>
+            </div>
+
+            <button className="w-full mt-10 py-4 border border-white/10 text-[9px] uppercase tracking-widest font-black hover:bg-white hover:text-black transition-all flex items-center justify-center gap-3">
+              <Zap size={12} /> Sync to Storefront
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function OrderList() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -911,6 +992,7 @@ export default function SellerDashboard() {
         </div>
         {[
           { id: 'analytics', label: 'Elegance Analytics', icon: BarChart3 },
+          { id: 'viral', label: 'Viral Discovery', icon: Flame },
           { id: 'neural-logic', label: 'Neural Bot Center', icon: Zap },
           { id: 'support', label: 'Support Concierge', icon: MessageSquare },
           { id: 'research', label: 'Global Sourcing', icon: Search },
@@ -959,6 +1041,7 @@ export default function SellerDashboard() {
           className="space-y-12"
         >
           {activeTab === 'analytics' && <AnalyticsHub />}
+          {activeTab === 'viral' && <ViralDiscoveryHub />}
           {activeTab === 'neural-logic' && <BotManagement />}
           {activeTab === 'support' && <SupportInbox />}
           {activeTab === 'research' && (

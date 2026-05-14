@@ -7,10 +7,10 @@ export interface AIRecommendation {
 }
 
 export async function getRecommendations(
-  browsingHistory: string[],
+  browsingHistory: string[] | null | undefined,
   allProducts: Product[]
 ): Promise<AIRecommendation | null> {
-  if (browsingHistory.length === 0) return null;
+  if (!browsingHistory || browsingHistory.length === 0) return null;
 
   try {
     const res = await axios.post('/api/engine/recommendations', { browsingHistory, allProducts });

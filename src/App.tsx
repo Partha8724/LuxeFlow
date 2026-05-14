@@ -10,9 +10,15 @@ import SellerDashboard from './pages/SellerDashboard';
 import Orders from './pages/Orders';
 import About from './pages/About';
 import Auth from './pages/Auth';
+import Profile from './pages/Profile';
+import Discover from './pages/Discover';
+import Track from './pages/Track';
+import AdminDashboard from './pages/AdminDashboard';
+import Influencers from './pages/Influencers';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { CartProvider, useCart } from './contexts/CartContext';
 import { MiniCart } from './components/MiniCart';
+import { ConversionTriggers, TrustBanner } from './components/ConversionTriggers';
 import ChatWidget from './components/ChatWidget';
 
 function AuthErrorNotification() {
@@ -73,9 +79,11 @@ function Navbar() {
           
           <div className="hidden lg:flex items-center gap-10 text-xs-wide text-gray-500">
             <Link to="/shop" className="hover:text-white transition-colors">Boutique</Link>
+            <Link to="/discover" className="hover:text-white transition-colors">Discover</Link>
+            <Link to="/track" className="hover:text-white transition-colors">Tracking</Link>
+            <Link to="/influencers" className="hover:text-white transition-colors">Partnership</Link>
             <Link to="/seller" className="hover:text-white transition-colors">Philosophy</Link>
-            <Link to="/about" className="hover:text-white transition-colors">Heritage</Link>
-            {user && <Link to="/seller" className="text-luxury-gold hover:text-white transition-colors">Partner Central</Link>}
+            {user && <Link to="/sovereign" className="text-luxury-gold hover:text-white transition-colors">Sovereign Layer</Link>}
           </div>
         </div>
 
@@ -97,18 +105,25 @@ function Navbar() {
             </button>
             <div className="h-6 w-px bg-white/10 mx-2"></div>
             {user ? (
-              <div className="flex items-center gap-5">
-                 <Link to="/orders" className="flex items-center gap-2 hover:text-luxury-gold transition-colors">
-                   <div className="w-8 h-8 rounded-full bg-wealth-silver/10 flex items-center justify-center border border-white/10 uppercase text-[10px] font-bold text-luxury-gold">
-                      {user.displayName?.charAt(0) || user.email?.charAt(0)}
+              <div className="flex items-center gap-6">
+                 <Link to="/profile" className="flex items-center gap-4 hover:scale-105 transition-transform group">
+                   <div className="w-10 h-10 rounded-full bg-luxury-gold/10 flex items-center justify-center border border-luxury-gold/30 shadow-[0_0_15px_rgba(212,175,55,0.1)] group-hover:border-luxury-gold transition-colors overflow-hidden">
+                      {user.photoURL ? (
+                        <img src={user.photoURL} alt="User" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="uppercase text-[12px] font-black text-luxury-gold">
+                          {user.displayName?.charAt(0) || user.email?.charAt(0)}
+                        </span>
+                      )}
                    </div>
-                   <div className="text-left hidden sm:block">
-                     <p className="text-[8px] text-gray-500 uppercase tracking-widest">Active Reserve</p>
-                     <p className="text-[10px] font-mono text-gray-400">{user.displayName || 'Architect'}</p>
+                   <div className="text-left hidden lg:block">
+                     <p className="text-[8px] text-luxury-gold uppercase tracking-[0.4em] font-black leading-tight">Master Tier</p>
+                     <p className="text-[11px] font-display font-medium text-white tracking-tight">{user.displayName || 'Architect'}</p>
                    </div>
                  </Link>
-                 <button onClick={logout} className="text-gray-500 hover:text-luxury-gold transition-colors ml-2" title="Sign Out">
-                   <LogOut size={16} />
+                 <div className="h-6 w-px bg-white/5 mx-2"></div>
+                 <button onClick={logout} className="text-gray-600 hover:text-luxury-gold transition-all" title="Sign Out">
+                   <LogOut size={16} strokeWidth={1.5} />
                  </button>
               </div>
             ) : (
@@ -140,6 +155,8 @@ export default function App() {
         <CartProvider>
           <Router>
             <div className="min-h-screen bg-luxury-black text-white selection:bg-luxury-gold/30 selection:text-white antialiased">
+              <TrustBanner />
+              <ConversionTriggers />
               <Navbar />
               <MiniCart />
               <ChatWidget />
@@ -149,10 +166,15 @@ export default function App() {
                   <Routes>
                     <Route path="/" element={<Landing />} />
                     <Route path="/shop" element={<Shop />} />
+                    <Route path="/discover" element={<Discover />} />
+                    <Route path="/track" element={<Track />} />
+                    <Route path="/sovereign" element={<AdminDashboard />} />
+                    <Route path="/influencers" element={<Influencers />} />
                     <Route path="/seller" element={<SellerDashboard />} />
                     <Route path="/orders" element={<Orders />} />
                     <Route path="/about" element={<About />} />
                     <Route path="/auth" element={<Auth />} />
+                    <Route path="/profile" element={<Profile />} />
                   </Routes>
                 </AnimatePresence>
               </main>
@@ -170,8 +192,11 @@ export default function App() {
                   <h3 className="text-[10px] uppercase tracking-[0.3em] font-medium text-gray-400">Navigation</h3>
                   <ul className="space-y-4 text-xs font-light text-gray-500 uppercase tracking-widest">
                     <li><Link to="/shop" className="hover:text-white transition-colors">Boutique</Link></li>
+                    <li><Link to="/discover" className="hover:text-white transition-colors">Viral Feed</Link></li>
+                    <li><Link to="/track" className="hover:text-white transition-colors">Global Tracking</Link></li>
+                    <li><Link to="/influencers" className="hover:text-white transition-colors">Influencer Node</Link></li>
+                    <li><Link to="/sovereign" className="hover:text-white transition-colors">Sovereign Control</Link></li>
                     <li><Link to="/seller" className="hover:text-white transition-colors">Sell With Us</Link></li>
-                    <li><Link to="/about" className="hover:text-white transition-colors">Our Ethos</Link></li>
                   </ul>
                 </div>
                 <div className="space-y-6">
