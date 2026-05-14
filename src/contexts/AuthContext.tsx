@@ -36,7 +36,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return unsubscribe;
   }, []);
 
-  const getErrorMessage = (code: string) => {
+  const getErrorMessage = (err: any) => {
+    const code = err.code;
     switch (code) {
       case 'auth/popup-blocked':
         return 'The authentication portal was restricted by your browser. Please permit pop-ups for this domain.';
@@ -48,8 +49,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return 'Connectivity interruption detected during authentication. Please verify your network state.';
       case 'auth/operation-not-allowed':
         return 'The requested authentication method is currently restricted in this environment.';
+      case 'auth/unauthorized-domain':
+        return 'This domain is not authorized for OAuth operations for your Firebase project. Please add it in the Firebase Console.';
+      case 'auth/invalid-api-key':
+        return 'Your Firebase API Key is invalid. Please check your configuration.';
+      case 'auth/app-deleted':
+        return 'The Firebase App was deleted or is not configured properly.';
       default:
-        return 'An internal exception occurred during authentication. Please retry or open in a new tab.';
+        return `An authentication error occurred (${code}): ${err.message || 'Please retry or open in a new tab.'}`;
     }
   };
 
@@ -60,7 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await signInWithPopup(auth, provider);
     } catch (err: any) {
       console.error("Error signing in with Google", err);
-      const friendlyMessage = getErrorMessage(err.code);
+      const friendlyMessage = getErrorMessage(err);
       setError(friendlyMessage);
     }
   };

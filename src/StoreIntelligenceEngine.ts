@@ -190,4 +190,25 @@ export class StoreIntelligenceEngine {
     const result = await model.generateContent(prompt);
     return result.response.text();
   }
+
+  /**
+   * Recommendations based on browsing history
+   */
+  async getRecommendations(browsingHistory: string[], allProducts: any[]) {
+    const model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+    const prompt = `
+You are a luxury fashion and lifestyle curator.
+Based on the user's recent interactions with the following product IDs: ${browsingHistory.join(', ')}.
+Here is our catalog:
+${allProducts.map(p => `ID: ${p.id}, Name: ${p.name}, Category: ${p.category}, Desc: ${p.description}`).join('\n')}
+
+Select up to 3 recommended product IDs from the catalog that complement what they viewed.
+Provide a short (1-2 sentences) elegant reasoning.
+Return ONLY a raw JSON format (no markdown, no backticks) with: { "productIds": ["<id1>", "<id2>"], "reasoning": "Your reasoning text" }
+    `;
+
+    const result = await model.generateContent(prompt);
+    const textResponse = result.response.text().replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '');
+    return JSON.parse(textResponse);
+  }
 }

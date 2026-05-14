@@ -336,6 +336,16 @@ async function startServer() {
      } catch (error: any) { res.status(500).json({ error: error.message }); }
   });
 
+  app.post('/api/engine/recommendations', async (req, res) => {
+    try {
+      const { browsingHistory, allProducts } = req.body;
+      const engine = getIntelligenceEngine();
+      if (!engine) return res.status(500).json({ error: 'AI Engine offline' });
+      const recommendations = await engine.getRecommendations(browsingHistory, allProducts);
+      res.json(recommendations);
+    } catch (error: any) { res.status(500).json({ error: error.message }); }
+  });
+
   // Vite middleare & Startup...
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
