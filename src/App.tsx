@@ -9,9 +9,11 @@ import Shop from './pages/Shop';
 import SellerDashboard from './pages/SellerDashboard';
 import Orders from './pages/Orders';
 import About from './pages/About';
+import Auth from './pages/Auth';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { CartProvider, useCart } from './contexts/CartContext';
 import { MiniCart } from './components/MiniCart';
+import ChatWidget from './components/ChatWidget';
 
 function AuthErrorNotification() {
   const { error, clearError } = useAuth();
@@ -49,7 +51,7 @@ function AuthErrorNotification() {
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
-  const { user, signInWithGoogle, logout } = useAuth();
+  const { user, logout } = useAuth();
   const { toggleCart, cart } = useCart();
   const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
 
@@ -73,6 +75,7 @@ function Navbar() {
             <Link to="/shop" className="hover:text-white transition-colors">Boutique</Link>
             <Link to="/seller" className="hover:text-white transition-colors">Philosophy</Link>
             <Link to="/about" className="hover:text-white transition-colors">Heritage</Link>
+            {user && <Link to="/seller" className="text-luxury-gold hover:text-white transition-colors">Partner Central</Link>}
           </div>
         </div>
 
@@ -96,18 +99,23 @@ function Navbar() {
             {user ? (
               <div className="flex items-center gap-5">
                  <Link to="/orders" className="flex items-center gap-2 hover:text-luxury-gold transition-colors">
-                   <User size={16} className="text-gray-400" />
-                   <span className="text-xs font-mono text-gray-400 hidden sm:block uppercase tracking-widest">My Account</span>
+                   <div className="w-8 h-8 rounded-full bg-wealth-silver/10 flex items-center justify-center border border-white/10 uppercase text-[10px] font-bold text-luxury-gold">
+                      {user.displayName?.charAt(0) || user.email?.charAt(0)}
+                   </div>
+                   <div className="text-left hidden sm:block">
+                     <p className="text-[8px] text-gray-500 uppercase tracking-widest">Active Reserve</p>
+                     <p className="text-[10px] font-mono text-gray-400">{user.displayName || 'Architect'}</p>
+                   </div>
                  </Link>
                  <button onClick={logout} className="text-gray-500 hover:text-luxury-gold transition-colors ml-2" title="Sign Out">
                    <LogOut size={16} />
                  </button>
               </div>
             ) : (
-              <button onClick={signInWithGoogle} className="flex items-center gap-2 text-[10px] font-mono text-gray-400 hover:text-luxury-gold transition-colors uppercase tracking-widest border border-white/10 px-3 py-1.5 rounded-sm bg-white/[0.02]">
+              <Link to="/auth" className="flex items-center gap-2 text-[10px] font-mono text-gray-400 hover:text-luxury-gold transition-colors uppercase tracking-widest border border-white/10 px-4 py-2 rounded-sm bg-white/[0.02] hover:bg-white/[0.05]">
                 <LogIn size={14} />
-                <span>Sign In</span>
-              </button>
+                <span>Identification</span>
+              </Link>
             )}
             <button className="text-luxury-white border border-white/10 p-3 hover:bg-white hover:text-black transition-all">
               <Menu size={18} />
@@ -134,6 +142,7 @@ export default function App() {
             <div className="min-h-screen bg-luxury-black text-white selection:bg-luxury-gold/30 selection:text-white antialiased">
               <Navbar />
               <MiniCart />
+              <ChatWidget />
               <AuthErrorNotification />
               <main>
                 <AnimatePresence mode="wait">
@@ -143,6 +152,7 @@ export default function App() {
                     <Route path="/seller" element={<SellerDashboard />} />
                     <Route path="/orders" element={<Orders />} />
                     <Route path="/about" element={<About />} />
+                    <Route path="/auth" element={<Auth />} />
                   </Routes>
                 </AnimatePresence>
               </main>
@@ -150,10 +160,10 @@ export default function App() {
             <footer className="py-24 border-t border-white/5 px-8">
               <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 gap-y-20">
                 <div className="col-span-1 md:col-span-2 space-y-6">
-                  <h2 className="text-2xl font-display tracking-tighter">LUXE<span className="text-luxury-gold">FLOW</span></h2>
+                  <h2 className="text-2xl font-display tracking-tighter">LUXE<span className="text-luxury-gold">DOOW</span></h2>
                   <p className="max-w-md text-gray-500 font-light text-sm leading-relaxed">
-                    A globally integrated dropshipping architecture for premium retailers. 
-                    Optimized for UK/USA logistics with AI-powered marketing and automated fulfillment.
+                    The architect's OS for billionaire-tier dropshipping. 
+                    Optimized for global logistics with AI-powered marketing and autonomous fulfillment.
                   </p>
                 </div>
                 <div className="space-y-6">

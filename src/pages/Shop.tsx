@@ -3,10 +3,12 @@ import { RefreshCcw, ShoppingBag, Eye, Heart, X, ShieldCheck, Truck, Sparkles, T
 import { cn, formatCurrency } from '../lib/utils';
 import { Product } from '../types';
 import React, { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { getRecommendations, AIRecommendation } from '../services/geminiService';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
+import PayPalPayment from '../components/PayPalPayment';
 
 const MOCK_PRODUCTS: Product[] = [
   {
@@ -97,12 +99,43 @@ interface CheckoutOverlayProps {
 }
 
 function CheckoutOverlay({ product, onClose, onAddToCart }: CheckoutOverlayProps) {
+  const { user } = useAuth();
+  const [success, setSuccess] = useState(false);
+
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = 'unset';
     };
   }, []);
+
+  const handlePaymentSuccess = (details: any) => {
+    console.log('Payment Successful:', details);
+    setSuccess(true);
+    // In real app, push to Firestore order collection
+  };
+
+  if (success) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="fixed inset-0 z-[200] bg-luxury-black flex flex-col items-center justify-center p-12 text-center"
+      >
+        <div className="w-24 h-24 rounded-full bg-luxury-gold/20 flex items-center justify-center text-luxury-gold mb-8">
+           <ShieldCheck size={48} />
+        </div>
+        <h2 className="text-4xl font-display font-light mb-4">Procurement Authorized</h2>
+        <p className="text-gray-500 text-xs uppercase tracking-[0.4em] mb-12">The object has been reserved. Tracking link deployed to email.</p>
+        <button 
+          onClick={onClose}
+          className="px-12 py-5 border border-white/20 text-white text-[10px] uppercase tracking-[0.4em] hover:bg-white hover:text-black transition-all"
+        >
+          Return to Archive
+        </button>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div 
@@ -134,7 +167,7 @@ function CheckoutOverlay({ product, onClose, onAddToCart }: CheckoutOverlayProps
            initial={{ y: 20, opacity: 0 }}
            animate={{ y: 0, opacity: 1 }}
            transition={{ delay: 0.3 }}
-           className="max-w-xl"
+           className="max-w-xl self-center"
          >
             <div className="text-[10px] uppercase tracking-[0.5em] text-luxury-gold mb-8 flex items-center gap-3">
               <span className="w-8 h-px bg-luxury-gold"></span>
@@ -149,20 +182,52 @@ function CheckoutOverlay({ product, onClose, onAddToCart }: CheckoutOverlayProps
             <p className="text-gray-400 font-light leading-relaxed mb-16 text-sm text-justify">
               {product.description}
             </p>
-            <div className="space-y-4 mb-16">
+            
+            <div className="space-y-6">
               <div className="flex justify-between items-center bg-white/[0.02] border border-white/5 p-5">
                 <span className="text-[10px] uppercase tracking-widest text-gray-500">Logistics</span>
                 <span className="text-xs font-mono text-white flex items-center gap-2">
                    <Truck size={14} className="text-luxury-gold" /> Global Express
                 </span>
               </div>
+
+              {user ? (
+                <div className="space-y-8">
+                  <div className="p-6 border border-luxury-gold/20 bg-luxury-gold/5 flex items-center gap-4">
+                     <ShieldCheck size={20} className="text-luxury-gold" />
+                     <div className="text-[10px] uppercase tracking-widest text-luxury-gold">Secure Digital Settlement Interface</div>
+                  </div>
+                  <PayPalPayment 
+                    amount={product.price}
+                    currency={product.currency}
+                    onSuccess={handlePaymentSuccess}
+                    onError={(err) => console.error(err)}
+                  />
+                  <div className="flex items-center gap-6 mt-8">
+                    <button 
+                      onClick={() => { onAddToCart(); onClose(); }}
+                      className="flex-1 py-5 border border-white/10 text-white text-[9px] uppercase tracking-[0.4em] font-medium hover:bg-white hover:text-black transition-all"
+                    >
+                      Add to Collection
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  <div className="p-8 border border-white/5 bg-white/5 text-center">
+                    <p className="text-[10px] uppercase tracking-[0.4em] text-gray-400 mb-8 leading-relaxed">
+                      Partner identity verification required for billion-dollar tier procurement.
+                    </p>
+                    <Link 
+                      to="/auth" 
+                      className="inline-block px-12 py-5 bg-white text-black text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-luxury-gold hover:text-white transition-all"
+                    >
+                      Authenticate Now
+                    </Link>
+                  </div>
+                </div>
+              )}
             </div>
-            <button 
-              onClick={() => { onAddToCart(); onClose(); }}
-              className="w-full py-6 bg-white text-black text-xs uppercase tracking-[0.4em] font-bold hover:bg-luxury-gold hover:text-white transition-all duration-500"
-            >
-              Add to Collection
-            </button>
          </motion.div>
       </div>
     </motion.div>

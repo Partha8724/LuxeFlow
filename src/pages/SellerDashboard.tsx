@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Package, RefreshCcw, Wand2, TrendingUp, Truck, ShieldCheck, AlertCircle, Play, Image as ImageIcon, Search, BarChart3, Globe, Zap } from 'lucide-react';
+import { Package, RefreshCcw, Wand2, TrendingUp, Truck, ShieldCheck, AlertCircle, Play, Image as ImageIcon, Search, BarChart3, Globe, Zap, Bot, MessageSquare, Plus, Save, Power, Target, Braces } from 'lucide-react';
+import { db, auth } from '../lib/firebase';
+import { collection, query, orderBy, onSnapshot, addDoc, Timestamp, doc, updateDoc, getDocs, where } from 'firebase/firestore';
 import { cn } from '../lib/utils';
 import axios from 'axios';
 import { 
@@ -37,6 +39,271 @@ function PremiumSkeleton({ className }: { className?: string }) {
   return (
     <div className={cn("relative overflow-hidden bg-[#0a0a0a] border border-white/5", className)}>
       <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/[0.03] to-transparent animate-[shimmer_2s_infinite]" />
+    </div>
+  );
+}
+
+function BotManagement() {
+  const [bots, setBots] = useState([
+    { id: 'inventory', name: 'Inventory Sentinel', desc: 'Auto-syncs stock levels from CJ/Spocket. Disables store products if out of stock.', active: true, icon: RefreshCcw },
+    { id: 'pricing', name: 'Competitor Shadow', desc: 'Scans competitors and maintains price -0.50 lower than average.', active: false, icon: Target },
+    { id: 'import', name: 'Crawler Import', desc: 'Scan supplier URLs and automatically import images, descriptions, and variants.', active: true, icon: Globe },
+    { id: 'profit', name: 'Yield Maximizer', desc: 'Dynamically adjusts commission based on demand velocity and market trends.', active: true, icon: TrendingUp },
+  ]);
+
+  const toggleBot = (id: string) => {
+    setBots(prev => prev.map(b => b.id === id ? { ...b, active: !b.active } : b));
+  };
+
+  return (
+    <div className="space-y-12">
+      <div className="flex items-center justify-between border-b border-white/5 pb-6">
+        <div>
+          <h3 className="text-xl font-display font-light">Neural Logic Center</h3>
+          <p className="text-[9px] uppercase tracking-[0.3em] text-gray-500 mt-2">Autonomous Partner Agents</p>
+        </div>
+        <div className="flex gap-4">
+           <div className="px-6 py-3 bg-luxury-gold/10 border border-luxury-gold/30 text-[9px] uppercase tracking-widest text-luxury-gold flex items-center gap-3">
+              <Bot size={14} className="animate-pulse" /> All Bots Active
+           </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {bots.map((bot) => (
+          <div key={bot.id} className={cn(
+            "glass p-8 border hover:border-luxury-gold/50 transition-all duration-700 relative overflow-hidden group",
+            bot.active ? "border-luxury-gold/20" : "border-white/5 opacity-60"
+          )}>
+            <div className="flex justify-between items-start mb-8 relative z-10">
+               <div className={cn(
+                 "p-4 border transition-colors",
+                 bot.active ? "border-luxury-gold text-luxury-gold" : "border-white/10 text-gray-600"
+               )}>
+                 <bot.icon size={24} />
+               </div>
+               <button 
+                 onClick={() => toggleBot(bot.id)}
+                 className={cn(
+                   "px-6 py-2 text-[9px] uppercase tracking-[0.2em] font-bold transition-all",
+                   bot.active ? "bg-luxury-gold text-white" : "bg-white/5 text-gray-400"
+                 )}
+               >
+                 {bot.active ? 'Active' : 'Disabled'}
+               </button>
+            </div>
+            <div className="relative z-10">
+              <h4 className="text-xl font-display font-light mb-3">{bot.name}</h4>
+              <p className="text-xs text-gray-500 font-light leading-relaxed mb-8">{bot.desc}</p>
+              
+              <div className="flex items-center gap-6">
+                 <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: bot.active ? '100%' : '0%' }}
+                      className="h-full bg-luxury-gold"
+                    />
+                 </div>
+                 <span className="text-[8px] uppercase tracking-widest text-gray-600 font-mono">Precision: 99.8%</span>
+              </div>
+            </div>
+            
+            {bot.active && (
+               <div className="absolute top-0 right-0 p-8 pt-10">
+                  <RefreshCcw size={64} className="text-luxury-gold/[0.03] animate-spin-slow rotate-12" />
+               </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Autonomous Pricing Console */}
+      <div className="glass p-10 border-white/5 relative">
+         <div className="absolute top-0 right-0 p-8">
+            <Braces size={48} className="text-white/[0.02]" />
+         </div>
+         <h3 className="text-xl font-display font-light mb-10 border-b border-white/5 pb-6">Autonomous Global Pricing Engine</h3>
+         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            <div className="space-y-4">
+               <label className="text-[9px] uppercase tracking-widest text-gray-500">Base Commission</label>
+               <div className="flex items-center gap-4">
+                  <input type="text" defaultValue="35%" className="bg-white/5 border border-white/10 p-4 text-xs font-mono w-full" />
+                  <Save size={16} className="text-gray-600" />
+               </div>
+            </div>
+            <div className="space-y-4">
+               <label className="text-[9px] uppercase tracking-widest text-gray-500">Competitor Delta</label>
+               <div className="flex items-center gap-4">
+                  <input type="text" defaultValue="-£0.50" className="bg-white/5 border border-white/10 p-4 text-xs font-mono w-full text-luxury-gold" />
+                  <Target size={16} className="text-luxury-gold" />
+               </div>
+            </div>
+            <div className="space-y-4">
+               <label className="text-[9px] uppercase tracking-widest text-gray-500">Auto-Import SKU Cap</label>
+               <div className="flex items-center gap-4">
+                  <input type="text" defaultValue="5000" className="bg-white/5 border border-white/10 p-4 text-xs font-mono w-full" />
+                  <Package size={16} className="text-gray-600" />
+               </div>
+            </div>
+         </div>
+      </div>
+    </div>
+  );
+}
+
+function SupportInbox() {
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [activeChat, setActiveChat] = useState<string | null>(null);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [reply, setReply] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Listen for all chat requests
+    const q = query(collection(db, 'customer_chats'), orderBy('timestamp', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const chats = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // Group by participant (user)
+      const grouped: any = {};
+      chats.forEach((c: any) => {
+        const userId = c.participants.find((p: string) => p !== 'ADMIN_ID');
+        if (!grouped[userId]) grouped[userId] = [];
+        grouped[userId].push(c);
+      });
+      setConversations(Object.keys(grouped).map(uid => ({
+        uid,
+        lastMessage: grouped[uid][0],
+        allMessages: grouped[uid].reverse()
+      })));
+    });
+    return unsubscribe;
+  }, []);
+
+  const handleSendReply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reply.trim() || !activeChat) return;
+
+    setLoading(true);
+    try {
+      await addDoc(collection(db, 'customer_chats'), {
+        text: reply.trim(),
+        senderId: 'ADMIN_ID',
+        senderName: 'Luxe Doow Partner',
+        participants: [activeChat, 'ADMIN_ID'],
+        timestamp: Timestamp.now(),
+        isAI: false
+      });
+      setReply('');
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const selectedConv = conversations.find(c => c.uid === activeChat);
+
+  return (
+    <div className="h-[700px] flex gap-8">
+      {/* List */}
+      <div className="w-80 flex flex-col glass border-white/5">
+        <div className="p-8 border-b border-white/5">
+           <h3 className="text-[10px] uppercase tracking-[0.4em] font-bold">Priority Support</h3>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+           {conversations.map(conv => (
+             <button 
+               key={conv.uid}
+               onClick={() => setActiveChat(conv.uid)}
+               className={cn(
+                 "w-full p-6 text-left border transition-all duration-500 group",
+                 activeChat === conv.uid ? "bg-white/5 border-luxury-gold/50" : "border-white/5 hover:border-white/20"
+               )}
+             >
+                <div className="flex justify-between items-center mb-2">
+                   <span className="text-[10px] uppercase tracking-widest text-white">{conv.lastMessage.senderName}</span>
+                   <span className="text-[8px] font-mono opacity-40">{conv.lastMessage.timestamp?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+                <p className="text-[9px] text-gray-500 line-clamp-1 italic">"{conv.lastMessage.text}"</p>
+             </button>
+           ))}
+           {conversations.length === 0 && (
+             <div className="py-20 text-center opacity-30">
+                <MessageSquare size={32} className="mx-auto mb-4" />
+                <span className="text-[9px] uppercase tracking-widest">No active transmissions</span>
+             </div>
+           )}
+        </div>
+      </div>
+
+      {/* View */}
+      <div className="flex-1 flex flex-col glass border-white/5 relative">
+        {!activeChat ? (
+          <div className="h-full flex flex-col items-center justify-center space-y-6 opacity-30">
+            <Zap size={48} className="text-luxury-gold" />
+            <div className="text-[10px] uppercase tracking-[0.4em]">Select Enterprise Link to Begin Support</div>
+          </div>
+        ) : (
+          <>
+            <div className="p-8 border-b border-white/5 flex items-center justify-between">
+               <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-luxury-gold/10 flex items-center justify-center text-luxury-gold border border-luxury-gold/30">
+                     {selectedConv?.lastMessage.senderName.charAt(0)}
+                  </div>
+                  <div>
+                    <h4 className="text-xs uppercase tracking-widest font-bold">{selectedConv?.lastMessage.senderName}</h4>
+                    <span className="text-[8px] uppercase tracking-widest text-green-500">Live External Socket</span>
+                  </div>
+               </div>
+               <div className="flex gap-4">
+                  <button className="px-5 py-2 border border-white/10 text-[9px] uppercase tracking-widest text-gray-500 hover:text-white transition-colors">Archive</button>
+                  <button className="px-5 py-2 bg-luxury-gold text-white text-[9px] uppercase tracking-widest font-bold">Transfer to AI</button>
+               </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-10 space-y-8 flex flex-col">
+               {selectedConv?.allMessages.map((msg: any) => (
+                 <div 
+                   key={msg.id}
+                   className={cn(
+                     "flex flex-col max-w-[70%]",
+                     msg.senderId === 'ADMIN_ID' ? "ml-auto items-end" : "mr-auto items-start"
+                   )}
+                 >
+                   <div className={cn(
+                     "p-6 text-xs leading-relaxed",
+                     msg.senderId === 'ADMIN_ID' ? "bg-luxury-gold text-white" : "bg-white/5 border border-white/10 text-gray-300"
+                   )}>
+                     {msg.text}
+                   </div>
+                   <span className="mt-3 text-[9px] uppercase tracking-widest text-gray-600 font-mono">
+                     {msg.senderName} • {msg.timestamp?.toDate().toLocaleTimeString()}
+                   </span>
+                 </div>
+               ))}
+            </div>
+
+            <form onSubmit={handleSendReply} className="p-8 border-t border-white/5">
+                <div className="relative">
+                   <input 
+                     type="text" 
+                     value={reply}
+                     onChange={(e) => setReply(e.target.value)}
+                     placeholder="Deploy Official Protocol Response..."
+                     className="w-full bg-white/[0.03] border border-white/10 p-6 pr-20 text-xs outline-none focus:border-luxury-gold transition-all"
+                   />
+                   <button 
+                     type="submit"
+                     disabled={loading}
+                     className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white text-black hover:bg-luxury-gold hover:text-white transition-all shadow-xl"
+                   >
+                     {loading ? <RefreshCcw className="animate-spin" size={16} /> : <Send size={16} />}
+                   </button>
+                </div>
+            </form>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -644,6 +911,8 @@ export default function SellerDashboard() {
         </div>
         {[
           { id: 'analytics', label: 'Elegance Analytics', icon: BarChart3 },
+          { id: 'neural-logic', label: 'Neural Bot Center', icon: Zap },
+          { id: 'support', label: 'Support Concierge', icon: MessageSquare },
           { id: 'research', label: 'Global Sourcing', icon: Search },
           { id: 'media', label: 'Media Studio', icon: ImageIcon },
           { id: 'inventory', label: 'Curated Stock', icon: Package },
@@ -690,6 +959,8 @@ export default function SellerDashboard() {
           className="space-y-12"
         >
           {activeTab === 'analytics' && <AnalyticsHub />}
+          {activeTab === 'neural-logic' && <BotManagement />}
+          {activeTab === 'support' && <SupportInbox />}
           {activeTab === 'research' && (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
               <GlobalResearchHub />

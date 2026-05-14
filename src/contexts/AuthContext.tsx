@@ -1,5 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { 
+  User, 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  signOut,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendEmailVerification,
+  updateProfile
+} from 'firebase/auth';
 import { auth } from '../lib/firebase';
 
 interface AuthContextType {
@@ -7,6 +16,8 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   signInWithGoogle: () => Promise<void>;
+  signUpWithEmail: (email: string, pass: string, name: string) => Promise<void>;
+  signInWithEmail: (email: string, pass: string) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
 }
@@ -16,6 +27,8 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   error: null,
   signInWithGoogle: async () => {},
+  signUpWithEmail: async () => {},
+  signInWithEmail: async () => {},
   logout: async () => {},
   clearError: () => {}
 });
@@ -39,6 +52,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const getErrorMessage = (err: any) => {
     const code = err.code;
     switch (code) {
+      case 'auth/email-already-in-use':
+        return 'This email is already associated with a Luxe Doow account.';
+      case 'auth/invalid-email':
+        return 'The provided email domain is invalid.';
+      case 'auth/weak-password':
+        return 'Security protocols require a more resilient password.';
+      case 'auth/user-not-found':
+      case 'auth/wrong-password':
+      case 'auth/invalid-credential':
+        return 'Authentication failed. Please verify your credentials.';
       case 'auth/popup-blocked':
         return 'The authentication portal was restricted by your browser. Please permit pop-ups for this domain.';
       case 'auth/popup-closed-by-user':
@@ -72,6 +95,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signUpWithEmail = async (email: string, pass: string, name: string) => {
+    setError(null);
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      await updateProfile(cred.user, { displayName: name });
+      await sendEmailVerification(cred.user);
+    } catch (err: any) {
+      setError(getErrorMessage(err));
+      throw err;
+    }
+  };
+
+  const signInWithEmail = async (email: string, pass: string) => {
+    setError(null);
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+    } catch (err: any) {
+      setError(getErrorMessage(err));
+      throw err;
+    }
+  };
+
   const logout = async () => {
     setError(null);
     try {
@@ -85,7 +130,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const clearError = () => setError(null);
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, signInWithGoogle, logout, clearError }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      error, 
+      signInWithGoogle, 
+      signUpWithEmail, 
+      signInWithEmail,
+      logout, 
+      clearError 
+    }}>
       {!loading && children}
     </AuthContext.Provider>
   );
