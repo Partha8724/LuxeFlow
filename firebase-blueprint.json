@@ -1,0 +1,69 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Luxury product catalog item",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "currency": { "type": "string", "enum": ["USD", "GBP"] },
+        "images": { "type": "array" },
+        "stock": { "type": "number" },
+        "supplierId": { "type": "string" },
+        "externalId": { "type": "string" },
+        "category": { "type": "string" },
+        "variants": { "type": "array" },
+        "aiMetadata": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "price", "currency", "supplierId"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Retail order from buyer",
+      "type": "object",
+      "properties": {
+        "buyerId": { "type": "string" },
+        "items": { "type": "array" },
+        "total": { "type": "number" },
+        "currency": { "type": "string" },
+        "status": { "type": "string", "enum": ["PENDING", "PAID", "PROCESSING", "SHIPPED", "COMPLETED", "CANCELLED"] },
+        "shippingAddress": { "type": "object" },
+        "paymentIntentId": { "type": "string" },
+        "supplierOrderId": { "type": "string" },
+        "region": { "type": "string", "enum": ["UK", "USA", "GLOBAL"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["buyerId", "items", "total", "status"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User account details",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["ADMIN", "SELLER", "BUYER"] },
+        "displayName": { "type": "string" },
+        "country": { "type": "string" }
+      },
+      "required": ["email", "role"]
+    }
+  },
+  "firestore": {
+    "products": {
+      "schema": "Product",
+      "description": "Global product catalog"
+    },
+    "orders": {
+      "schema": "Order",
+      "description": "Customer orders"
+    },
+    "users": {
+      "schema": "UserProfile",
+      "description": "User account profiles"
+    }
+  }
+}

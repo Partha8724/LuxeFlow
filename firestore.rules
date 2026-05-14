@@ -1,0 +1,65 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ---------------------------------------------------------
+    // CRITICAL GLOBAL HELPERS
+    // ---------------------------------------------------------
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isAdmin() { return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN'; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ---------------------------------------------------------
+    // USERS COLLECTION
+    // ---------------------------------------------------------
+    match /users/{userId} {
+      function isValidUser(data) {
+        return data.keys().hasAll(['email', 'role']) &&
+               data.email is string && data.email.size() <= 256 &&
+               data.role in ['ADMIN', 'SELLER', 'BUYER'];
+      }
+
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isSignedIn() && isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.role == 'BUYER'; // Standard users can only register as BUYER
+      allow update: if (isOwner(userId) || isAdmin()) && 
+                    isValidUser(request.resource.data) &&
+                    (isAdmin() || request.resource.data.role == resource.data.role); // Only admin can change roles
+    }
+
+    // ---------------------------------------------------------
+    // PRODUCTS COLLECTION
+    // ---------------------------------------------------------
+    match /products/{productId} {
+      function isValidProduct(data) {
+        return data.name is string && data.name.size() <= 200 &&
+               data.price is number && data.price >= 0 &&
+               data.currency in ['USD', 'GBP'] &&
+               data.supplierId is string;
+      }
+
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ---------------------------------------------------------
+    // ORDERS COLLECTION
+    // ---------------------------------------------------------
+    match /orders/{orderId} {
+      function isValidOrder(data) {
+        return data.buyerId == request.auth.uid &&
+               data.items is list && data.items.size() > 0 &&
+               data.total is number &&
+               data.status in ['PENDING', 'PAID', 'PROCESSING', 'SHIPPED', 'COMPLETED', 'CANCELLED'];
+      }
+
+      allow read: if isSignedIn() && (resource.data.buyerId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && isValidOrder(request.resource.data);
+      allow update: if isAdmin(); // Only admin/system can update order status
+    }
+  }
+}
